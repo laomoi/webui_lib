@@ -8,10 +8,28 @@ from modules import script_callbacks, extra_networks
 from modules import  scripts
 from scripts.xyz_grid import AxisOption,axis_options
 from modules.scripts import ScriptRunner
+import modules.sd_models as sd_models
+
+
 def initialize():
     import webui
+    print("load model", shared.opts.sd_model_checkpoint)
     webui.initialize()
     script_callbacks.before_ui_callback()
+
+
+def get_checkpoint_list():
+    return sd_models.checkpoints_list
+
+def set_default_model(sd_model_name):
+    shared.opts.sd_model_checkpoint = sd_model_name
+
+def set_lora_dir(dir):
+    shared.cmd_opts.lora_dir = dir
+
+def reload_model(sd_model_name):
+    shared.opts.sd_model_checkpoint = sd_model_name
+    sd_models.reload_model_weights()
 
 def txt2img(params, outer_script_name=None, outer_script_args=None, controlnets=None):
     args = {
