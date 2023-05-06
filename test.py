@@ -1,5 +1,5 @@
 
-from yfcore import webui_lib
+import webui_lib
 
 from PIL import Image
 import numpy as np

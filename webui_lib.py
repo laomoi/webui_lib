@@ -1,5 +1,5 @@
 
-import config
+import webui_config
 
 from modules.processing import StableDiffusionProcessingTxt2Img, StableDiffusionProcessingImg2Img, process_images
 import modules.shared as shared
