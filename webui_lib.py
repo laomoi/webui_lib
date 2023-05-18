@@ -101,7 +101,7 @@ def txt2img(params, outer_script_name=None, outer_script_args=None, controlnets=
 
 def merge_scripts(p, is_img2img, outer_script, outer_script_idx, outer_script_args, cn_script, controlnets):
     cn_args = []
-    if controlnets is not None and cn_script is not None:
+    if controlnets is not None and len(controlnets) > 0 and cn_script is not None:
         p.scripts = ScriptRunner()
         p.scripts.alwayson_scripts.append(cn_script)
         cn_args.append(is_img2img)
