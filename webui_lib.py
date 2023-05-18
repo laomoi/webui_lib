@@ -1,6 +1,6 @@
 
 import webui_config
-
+import sys
 from modules.processing import StableDiffusionProcessingTxt2Img, StableDiffusionProcessingImg2Img, process_images
 import modules.shared as shared
 from PIL import PngImagePlugin
@@ -9,7 +9,11 @@ from modules import  scripts
 from scripts.xyz_grid import AxisOption,axis_options
 from modules.scripts import ScriptRunner
 import modules.sd_models as sd_models
+from modules import extensions
 
+is_old_cn_version_before_4 = False
+is_imported_controlnet = False
+controlnet_model_list = []
 
 def initialize():
     import webui
@@ -20,6 +24,30 @@ def initialize():
 
 def get_checkpoint_list():
     return sd_models.checkpoints_list
+
+def get_cn_model_list():
+    global is_imported_controlnet
+    global controlnet_model_list
+    if not is_imported_controlnet:
+        for ext in extensions.extensions:
+            if ext.name == 'sd-webui-controlnet':
+                #import controlnet
+                print(" controlnet path", ext.path)
+                sys.path.append( ext.path)
+                
+                from scripts import global_state
+                global_state.update_cn_models()
+                controlnet_model_list = list(global_state.cn_models_names.values())
+                is_imported_controlnet = True
+                break
+    return controlnet_model_list
+
+def get_cn_model_name(start_str):
+    model_list = get_cn_model_list()
+    for m in model_list:
+        if m.startswith(start_str):
+            return m
+    return None
 
 def set_default_model(sd_model_name):
     shared.opts.sd_model_checkpoint = sd_model_name
@@ -72,18 +100,67 @@ def txt2img(params, outer_script_name=None, outer_script_args=None, controlnets=
         'do_not_save_grid': True
     }
 
+
     if params is not None :
         for k in params:
             if k in args:
                 args[k] = params[k]
 
     scripts_runner = scripts.scripts_txt2img
+    p = StableDiffusionProcessingTxt2Img(sd_model=shared.sd_model, **args)
+    return generate_img(p, scripts_runner, outer_script_name, outer_script_args, controlnets)
+
+
+def img2img(params, outer_script_name=None, outer_script_args=None, controlnets=None):
+    args = {
+        # outpath_samples=opts.outdir_samples or opts.outdir_img2img_samples,
+        # outpath_grids=opts.outdir_grids or opts.outdir_img2img_grids,
+        # prompt=prompt,
+        # negative_prompt=negative_prompt,
+        # styles=prompt_styles,
+        # seed=seed,
+        # subseed=subseed,
+        # subseed_strength=subseed_strength,
+        # seed_resize_from_h=seed_resize_from_h,
+        # seed_resize_from_w=seed_resize_from_w,
+        # seed_enable_extras=seed_enable_extras,
+        # sampler_name=sd_samplers.samplers_for_img2img[sampler_index].name,
+        # batch_size=batch_size,
+        # n_iter=n_iter,
+        # steps=steps,
+        # cfg_scale=cfg_scale,
+        # width=width,
+        # height=height,
+        # restore_faces=restore_faces,
+        # tiling=tiling,
+        # init_images=[image],
+        # mask=mask,
+        # mask_blur=mask_blur,
+        # inpainting_fill=inpainting_fill,
+        # resize_mode=resize_mode,
+        # denoising_strength=denoising_strength,
+        # image_cfg_scale=image_cfg_scale,
+        # inpaint_full_res=inpaint_full_res,
+        # inpaint_full_res_padding=inpaint_full_res_padding,
+        # inpainting_mask_invert=inpainting_mask_invert,
+        # override_settings=override_settings,
+    }
+
+
+    if params is not None :
+        for k in params:
+            if k in args:
+                args[k] = params[k]
+
+    scripts_runner = scripts.scripts_img2img
+    p = StableDiffusionProcessingImg2Img(sd_model=shared.sd_model, **args)
+    return generate_img(p, scripts_runner, outer_script_name, outer_script_args, controlnets)
+
+
+def generate_img(p, scripts_runner, outer_script_name=None, outer_script_args=None, controlnets=None):
 
     outer_script, outer_script_idx = get_script(outer_script_name, scripts_runner, scripts_runner.selectable_scripts)
     cn_script,cn_script_idx = get_script("controlnet", scripts_runner, scripts_runner.alwayson_scripts)
-
-    p = StableDiffusionProcessingTxt2Img(sd_model=shared.sd_model, **args)
-
 
     merge_scripts(p, False, outer_script, outer_script_idx, outer_script_args, cn_script, controlnets)
 
@@ -98,15 +175,15 @@ def txt2img(params, outer_script_name=None, outer_script_args=None, controlnets=
     shared.state.end()
     return processed.images
 
-
 def merge_scripts(p, is_img2img, outer_script, outer_script_idx, outer_script_args, cn_script, controlnets):
     cn_args = []
     if controlnets is not None and len(controlnets) > 0 and cn_script is not None:
         p.scripts = ScriptRunner()
         p.scripts.alwayson_scripts.append(cn_script)
-        cn_args.append(is_img2img)
-        is_ui = False
-        cn_args.append(is_ui)
+        if is_old_cn_version_before_4:
+            cn_args.append(is_img2img)
+            is_ui = False
+            cn_args.append(is_ui)
         # set args to controlnet script
         keys = ['enabled', 'module', 'model', 'weight', 'image', 'scribble_mode', 'resize_mode', 'rgbbgr_mode',
                 'lowvram', 'pres', 'pthr_a', 'pthr_b', 'guidance_start', 'guidance_end', 'guess_mode']
@@ -133,6 +210,7 @@ def merge_scripts(p, is_img2img, outer_script, outer_script_idx, outer_script_ar
                     default_param[k] = cn[k]
             for k in keys:
                 cn_args.append(default_param[k])
+            print("input args:", default_param)        
     # controlnet args
     # (True, 'canny', 'control_canny [9d312881]', 1, {'image': array(), 'mask': array()}, False, 'Scale to Fit (Inner Fit)', False, False, 512, 100, 200, 0, 1, False,
     # enabled, module, model, weight, image, scribble_mode, resize_mode, rgbbgr_mode, lowvram, pres, pthr_a, pthr_b, guidance_start, guidance_end, guess_mode

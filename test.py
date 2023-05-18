@@ -6,7 +6,7 @@ import numpy as np
 
 def start():
     webui_lib.initialize()
-
+    print(webui_lib.get_cn_model_list())
     #lora
     #images = webui_lib.txt2img({'prompt': "box <lora:Hgame_ICON:1>"} )
     #grid
@@ -16,11 +16,18 @@ def start():
     #controlnet
     png = Image.open('./1.png')
     mask = Image.new("RGB",(png.width,png.height),(0,0,0,255))
+    canny_model_name = webui_lib.get_cn_model_name('control_canny')
+    if canny_model_name is None:
+        canny_model_name = webui_lib.get_cn_model_name('control_sd15_canny')
+    if canny_model_name is None:
+        print("cannot find canny model in controlnet")
+    else:
+        print("find canny control:",canny_model_name)
     images = webui_lib.txt2img({'prompt': "1girl", 'width':512, 'height':512}, None, None, [
         {
             'enabled': True,
             'module': 'canny',
-            'model': 'control_canny [9d312881]',
+            'model': canny_model_name,
             'weight': 1,
             'image': {'image': np.array(png), 'mask':np.array(mask)},
             'scribble_mode': False,
