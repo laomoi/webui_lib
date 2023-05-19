@@ -11,7 +11,7 @@ from modules.scripts import ScriptRunner
 import modules.sd_models as sd_models
 from modules import extensions
 
-is_old_cn_version_before_4 = False
+is_old_cn_version_before_4 = False #old controlnet has different params and process args
 is_imported_controlnet = False
 controlnet_model_list = []
 
@@ -108,42 +108,44 @@ def txt2img(params, outer_script_name=None, outer_script_args=None, controlnets=
 
     scripts_runner = scripts.scripts_txt2img
     p = StableDiffusionProcessingTxt2Img(sd_model=shared.sd_model, **args)
+    p.script_args = []
     return generate_img(p, scripts_runner, outer_script_name, outer_script_args, controlnets)
 
 
 def img2img(params, outer_script_name=None, outer_script_args=None, controlnets=None):
     args = {
-        # outpath_samples=opts.outdir_samples or opts.outdir_img2img_samples,
-        # outpath_grids=opts.outdir_grids or opts.outdir_img2img_grids,
-        # prompt=prompt,
-        # negative_prompt=negative_prompt,
-        # styles=prompt_styles,
-        # seed=seed,
-        # subseed=subseed,
-        # subseed_strength=subseed_strength,
-        # seed_resize_from_h=seed_resize_from_h,
-        # seed_resize_from_w=seed_resize_from_w,
-        # seed_enable_extras=seed_enable_extras,
-        # sampler_name=sd_samplers.samplers_for_img2img[sampler_index].name,
-        # batch_size=batch_size,
-        # n_iter=n_iter,
-        # steps=steps,
-        # cfg_scale=cfg_scale,
-        # width=width,
-        # height=height,
-        # restore_faces=restore_faces,
-        # tiling=tiling,
-        # init_images=[image],
-        # mask=mask,
-        # mask_blur=mask_blur,
-        # inpainting_fill=inpainting_fill,
-        # resize_mode=resize_mode,
-        # denoising_strength=denoising_strength,
-        # image_cfg_scale=image_cfg_scale,
-        # inpaint_full_res=inpaint_full_res,
-        # inpaint_full_res_padding=inpaint_full_res_padding,
-        # inpainting_mask_invert=inpainting_mask_invert,
-        # override_settings=override_settings,
+        'outpath_samples': shared.opts.outdir_samples or shared.opts.outdir_img2img_samples,
+        'outpath_grids': shared.opts.outdir_grids or shared.opts.outdir_img2img_grids,
+        'prompt': '',
+        'negative_prompt': '',
+        'styles': [],
+        'seed': -1.0,
+        'subseed': -1.0,
+        'subseed_strength': 0,
+        'seed_resize_from_h': 0,
+        'seed_resize_from_w': 0,
+        'seed_enable_extras': False,
+        'sampler_name': 'Euler a',
+        'batch_size': 1,
+        'n_iter': 1,
+        'steps': 20,
+        'cfg_scale': 7,
+        'width': 512,
+        'height': 512,
+        'restore_faces': False,
+        'tiling': False,
+        'override_settings': {},
+        'init_images': None,
+        'resize_mode':  0,
+        'denoising_strength':  0.75,
+        'image_cfg_scale':  1.5,
+        'mask':  None,
+        'mask_blur':  4,
+        'inpainting_fill':  1,
+        'inpaint_full_res':  False,
+        'inpaint_full_res_padding':  32,
+        'inpainting_mask_invert':  0,
+        'initial_noise_multiplier':  shared.opts.initial_noise_multiplier
     }
 
 
@@ -152,8 +154,9 @@ def img2img(params, outer_script_name=None, outer_script_args=None, controlnets=
             if k in args:
                 args[k] = params[k]
 
-    scripts_runner = scripts.scripts_img2img
+    scripts_runner = scripts.scripts_txt2img #scripts.scripts_img2img
     p = StableDiffusionProcessingImg2Img(sd_model=shared.sd_model, **args)
+    p.script_args = []
     return generate_img(p, scripts_runner, outer_script_name, outer_script_args, controlnets)
 
 
