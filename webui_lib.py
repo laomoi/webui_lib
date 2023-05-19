@@ -213,7 +213,7 @@ def merge_scripts(p, is_img2img, outer_script, outer_script_idx, outer_script_ar
                     default_param[k] = cn[k]
             for k in keys:
                 cn_args.append(default_param[k])
-            print("input args:", default_param)        
+            # print("input args:", default_param)
     # controlnet args
     # (True, 'canny', 'control_canny [9d312881]', 1, {'image': array(), 'mask': array()}, False, 'Scale to Fit (Inner Fit)', False, False, 512, 100, 200, 0, 1, False,
     # enabled, module, model, weight, image, scribble_mode, resize_mode, rgbbgr_mode, lowvram, pres, pthr_a, pthr_b, guidance_start, guidance_end, guess_mode
